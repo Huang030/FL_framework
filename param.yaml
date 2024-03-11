@@ -1,18 +1,16 @@
 dataset: cifar10
 model: resnet
-parties: 100
+parties: 10
 
 
 # global setup
-batch_size: 50
-alpha: 0.9  # dirichlet
+batch_size: 100
+alpha: 1.0  # dirichlet
 epochs: 200
-eta: 0.1
-num_train_parties: 10
+eta: 1  # step
+num_train_parties: 5
 
 
 # local setup
 lr: 0.01
-inner_epochs: 5
-
-
+inner_epochs: 1

@@ -18,28 +18,38 @@ class Helper:
         
     def load_data(self):
         # 加载数据集
-        train_transform = transforms.Compose([transforms.ToTensor(),
-                                              transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2471, 0.2435, 0.2616])])
-        test_transform = transforms.Compose([transforms.ToTensor()])
+        transform_train = transforms.Compose([
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        ])
+        transform_test = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        ])
+
         if self.param['dataset'] == "cifar10":
-            self.train_dataset = datasets.CIFAR10(root = "~/data", train = True, transform = train_transform, download = True)
-            self.test_dataset = datasets.CIFAR10(root = "~/data", train = False, transform = test_transform, download = True)
+            self.train_dataset = datasets.CIFAR10(root = "~/data", train = True, transform = transform_train, download = True)
+            self.test_dataset = datasets.CIFAR10(root = "~/data", train = False, transform = transform_test, download = True)
 
         # 加载模型 
         if self.param['model'] == "resnet":
             self.local_model = models.resnet.ResNet18(name = 'local_model')
             self.global_model = models.resnet.ResNet18(name = 'global_model')
+            self.local_model.cuda()
+            self.global_model.cuda()
 
         # 配置数据加载器
         self.test_dataloader = torch.utils.data.DataLoader(self.test_dataset, 
                                                            batch_size = self.param['batch_size'], 
-                                                           shuffle = True)
+                                                           shuffle = False, num_workers=8)
         per_party_list = sample_dirichlet(self.train_dataset, self.param['parties'], self.param['alpha'])
         for party in range(self.param['parties']):
             sampler = torch.utils.data.SubsetRandomSampler(per_party_list[party])
             self.train_dataloaders[party] = torch.utils.data.DataLoader(self.train_dataset,
                                                                         batch_size = self.param['batch_size'], 
-                                                                        sampler = sampler)
+                                                                        sampler = sampler, num_workers=8)
 
 
 def sample_dirichlet(train_dataset, parties, alpha = 0.9):
